@@ -1,80 +1,116 @@
-// import { useState } from 'react'
-import { useState, useEffect } from 'react'
+import Cloud from './components/Cloud'
 
-
-// This function generates a random math question
-function generateQuestion() {
-  const a = Math.floor(Math.random() * 10) + 1
-  const b = Math.floor(Math.random() * 10) + 1
-  return {
-    question: `${a} + ${b}`,
-    answer: a + b
-  }
-}
+// Our cloud data - position and size for each cloud
+const CLOUDS = [
+  { id: 1, x: 5,  y: 60,  size: 'large'  as const },
+  { id: 2, x: 25, y: 30,  size: 'medium' as const },
+  { id: 3, x: 48, y: 80,  size: 'small'  as const },
+  { id: 4, x: 65, y: 45,  size: 'large'  as const },
+  { id: 5, x: 80, y: 25,  size: 'medium' as const },
+]
 
 function App() {
-  // useState stores values that change on screen
-  const [current, setCurrent] = useState(generateQuestion())
-  const [input, setInput] = useState('')
-  const [feedback, setFeedback] = useState('')
-  const [score, setScore] = useState(0)
-
-  useEffect(() => {
-  console.log('Score changed to:', score)
-}, [score])
-
-  
-
-  function handleAnswer() {
-    // Convert input string to a number and check it
-    if (parseInt(input) === current.answer) {
-      setFeedback('✅ Correct!')
-      setScore(score + 1)
-    } else {
-      setFeedback(`❌ Wrong! The answer was ${current.answer}`)
-    }
-
-    // Wait 1 second then load next question
-    setTimeout(() => {
-      setCurrent(generateQuestion())
-      setInput('')
-      setFeedback('')
-    }, 1000)
-  }
-
-  function handleKeyDown(e: React.KeyboardEvent) {
-    // Submit when player presses Enter
-    if (e.key === 'Enter') {
-      handleAnswer()
-    }
-  }
-
   return (
-    <div style={{ padding: '40px', fontFamily: 'sans-serif' }}>
-      <h1>Math Practice</h1>
-      <p>Score: {score}</p>
+    // Game container - full screen sky background
+    <div
+      style={{
+        position: 'relative',
+        width: '100vw',
+        height: '100vh',
+        background: 'linear-gradient(180deg, #b8dff0 0%, #cceaf7 60%, #a8d4e8 100%)',
+        overflow: 'hidden',
+      }}
+    >
 
-      <h2 style={{ fontSize: '48px' }}>{current.question} = ?</h2>
+      {/* Clouds */}
+      {CLOUDS.map(cloud => (
+        <Cloud
+          key={cloud.id}
+          x={cloud.x}
+          y={cloud.y}
+          size={cloud.size}
+        />
+      ))}
 
-      <input
-        type="number"
-        value={input}
-        onChange={(e) => setInput(e.target.value)}
-        onKeyDown={handleKeyDown}
-        placeholder="Your answer..."
-        style={{ fontSize: '24px', padding: '8px', width: '200px' }}
+      {/* Ocean strip at bottom */}
+      <div
+        style={{
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: '80px',
+          background: 'linear-gradient(180deg, #2196f3 0%, #1976d2 100%)',
+        }}
       />
 
-      <br /><br />
-
-      <button
-        onClick={handleAnswer}
-        style={{ fontSize: '18px', padding: '8px 24px' }}
+      {/* HUD - top bar with lives and score */}
+      <div
+        style={{
+          position: 'absolute',
+          top: '12px',
+          left: 0,
+          right: 0,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          padding: '0 20px',
+        }}
       >
-        Submit
-      </button>
+        {/* Lives */}
+        <div
+          style={{
+            background: 'rgba(255,255,255,0.75)',
+            borderRadius: '20px',
+            padding: '6px 16px',
+            fontSize: '22px',
+            display: 'flex',
+            gap: '4px',
+          }}
+        >
+          ❤️❤️❤️
+        </div>
 
-      <p style={{ fontSize: '24px', marginTop: '20px' }}>{feedback}</p>
+        {/* Score */}
+        <div
+          style={{
+            background: 'rgba(255,255,255,0.75)',
+            borderRadius: '12px',
+            padding: '6px 18px',
+            fontSize: '18px',
+            fontWeight: '600',
+            color: '#333',
+          }}
+        >
+          SCORE: 0
+        </div>
+      </div>
+
+      {/* Answer input - center of screen */}
+      <div
+        style={{
+          position: 'absolute',
+          top: '60px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+        }}
+      >
+        <input
+          type="number"
+          placeholder="Type answer..."
+          style={{
+            padding: '8px 20px',
+            borderRadius: '20px',
+            border: '2px solid rgba(255,255,255,0.8)',
+            background: 'rgba(255,255,255,0.9)',
+            fontSize: '16px',
+            textAlign: 'center',
+            outline: 'none',
+            width: '180px',
+          }}
+        />
+      </div>
+
     </div>
   )
 }
