@@ -1,9 +1,12 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef } from 'react'
 import Cloud from './components/Cloud'
 import Drop from './components/Drop'
 import StartScreen from './components/StartScreen'
 import GameOverScreen from './components/GameOverScreen'
+import LoginScreen from './components/LoginScreen'
+import SignupScreen from './components/SignupScreen'
 import { useGameLoop } from './hooks/useGameLoop'
+import { useAuth } from './context/AuthContext'
 import { playCorrect, playWrong } from './utils/sounds'
 import type { GameSettings } from './types'
 import { DEFAULT_SETTINGS } from './types'
@@ -17,6 +20,8 @@ const CLOUDS = [
 ]
 
 function App() {
+  const { user, username, loading, signOut } = useAuth()
+  const [authScreen, setAuthScreen] = useState<'login' | 'signup'>('login')
   const [settings, setSettings] = useState<GameSettings>(DEFAULT_SETTINGS)
   const [showStart, setShowStart] = useState(true)
 
@@ -35,7 +40,6 @@ function App() {
   const inputRef = useRef<HTMLInputElement>(null)
   const flashIdRef = useRef(0)
 
-
   function showScoreFlash(x: number, y: number) {
     const id = flashIdRef.current++
     setScoreFlashes(prev => [...prev, { id, x, y }])
@@ -47,9 +51,7 @@ function App() {
   function handleAnswer(value: string) {
     const val = parseInt(value.trim(), 10)
     if (isNaN(val)) return
-
     const matchedDrop = drops.find(d => d.answer === val)
-
     if (matchedDrop) {
       playCorrect()
       setInputAnim('flash-blue')
@@ -81,6 +83,30 @@ function App() {
 
   const hearts = Array.from({ length: 3 }, (_, i) => i < lives ? '❤️' : '🖤')
 
+  // Show loading spinner while checking auth
+  if (loading) {
+    return (
+      <div style={{
+        width: '100vw', height: '100vh',
+        display: 'flex', alignItems: 'center',
+        justifyContent: 'center',
+        background: 'linear-gradient(180deg, #b8dff0 0%, #cceaf7 60%, #a8d4e8 100%)',
+        fontSize: '24px', fontFamily: 'sans-serif', color: '#1565c0',
+      }}>
+        Loading...
+      </div>
+    )
+  }
+
+  // Show auth screens if not logged in
+  if (!user) {
+    if (authScreen === 'login') {
+      return <LoginScreen onSwitchToSignup={() => setAuthScreen('signup')} />
+    }
+    return <SignupScreen onSwitchToLogin={() => setAuthScreen('login')} />
+  }
+
+  // Main game
   return (
     <div style={{
       position: 'relative', width: '100vw', height: '100vh',
@@ -143,11 +169,31 @@ function App() {
         }}>
           {hearts}
         </div>
-        <div style={{
-          background: 'rgba(255,255,255,0.75)', borderRadius: '12px',
-          padding: '6px 18px', fontSize: '16px', fontWeight: '600', color: '#333',
-        }}>
-          SCORE: {score}
+
+        {/* Username + logout */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{
+            background: 'rgba(255,255,255,0.75)', borderRadius: '12px',
+            padding: '6px 14px', fontSize: '14px', fontWeight: '600', color: '#1565c0',
+          }}>
+            👤 {username}
+          </div>
+          <div style={{
+            background: 'rgba(255,255,255,0.75)', borderRadius: '12px',
+            padding: '6px 18px', fontSize: '16px', fontWeight: '600', color: '#333',
+          }}>
+            SCORE: {score}
+          </div>
+          <button
+            onClick={signOut}
+            style={{
+              background: 'rgba(255,255,255,0.75)', borderRadius: '12px',
+              padding: '6px 14px', fontSize: '13px', fontWeight: '600',
+              color: '#c62828', border: 'none', cursor: 'pointer',
+            }}
+          >
+            Logout
+          </button>
         </div>
       </div>
 
@@ -188,14 +234,10 @@ function App() {
       )}
 
       {/* Start screen */}
-      {showStart && (
-        <StartScreen onStart={handleStart} />
-      )}
+      {showStart && <StartScreen onStart={handleStart} />}
 
       {/* Game over screen */}
-      {gameOver && (
-        <GameOverScreen score={score} onPlayAgain={handlePlayAgain} />
-      )}
+      {gameOver && <GameOverScreen score={score} onPlayAgain={handlePlayAgain} />}
 
     </div>
   )
