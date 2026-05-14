@@ -2,6 +2,7 @@ import { useState, useRef } from 'react'
 import Cloud from './components/Cloud'
 import Drop from './components/Drop'
 import { useGameLoop } from './hooks/useGameLoop'
+import { playCorrect, playWrong } from './utils/sounds'
 
 const CLOUDS = [
   { id: 1, x: 5,  y: 60,  size: 'large'  as const },
@@ -15,30 +16,51 @@ function App() {
   const {
     drops, score, lives,
     gameRunning, gameOver, targetedId,
-    startGame, handleCorrectAnswer,
+    startGame, handleCorrectAnswer, handleWrongAnswer,
   } = useGameLoop()
 
   const [input, setInput] = useState('')
   const [feedback, setFeedback] = useState('')
+  const [scoreFlashes, setScoreFlashes] = useState<
+    { id: number; x: number; y: number; pts: number }[]
+  >([])
+  const [inputAnim, setInputAnim] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
+  const flashIdRef = useRef(0)
+
+  function showScoreFlash(x: number, y: number, pts: number) {
+    const id = flashIdRef.current++
+    setScoreFlashes(prev => [...prev, { id, x, y, pts }])
+    setTimeout(() => {
+      setScoreFlashes(prev => prev.filter(f => f.id !== id))
+    }, 800)
+  }
 
   function handleAnswer(value: string) {
-  const val = parseInt(value.trim(), 10)
-  if (isNaN(val)) return
+    const val = parseInt(value.trim(), 10)
+    if (isNaN(val)) return
 
-  // Check against ALL drops, not just targeted
-  const matchedDrop = drops.find(d => d.answer === val)
+    const matchedDrop = drops.find(d => d.answer === val)
 
-  if (matchedDrop) {
-    setFeedback('✅ Correct!')
-    handleCorrectAnswer(matchedDrop.id)
-    setInput('')
-    setTimeout(() => setFeedback(''), 800)
+    if (matchedDrop) {
+      playCorrect()
+      setInputAnim('flash-blue')
+      setTimeout(() => setInputAnim(''), 300)
+      showScoreFlash(matchedDrop.x, matchedDrop.y, 10)
+      handleCorrectAnswer(matchedDrop.id)
+      setInput('')
+    } else {
+      // Only show wrong feedback if input length suggests a complete answer
+      if (value.length >= 2) {
+        playWrong()
+        setInputAnim('flash-red')
+        setTimeout(() => setInputAnim(''), 300)
+        handleWrongAnswer()
+        setFeedback('❌ Wrong!')
+        setTimeout(() => setFeedback(''), 600)
+      }
+    }
   }
-  // No feedback for wrong — just keep typing like real game
-}
-
-
 
   const hearts = Array.from({ length: 3 }, (_, i) => i < lives ? '❤️' : '🖤')
 
@@ -62,7 +84,30 @@ function App() {
           y={drop.y}
           question={drop.question}
           isTargeted={drop.id === targetedId}
+          isPopping={drop.isPopping}
+          isShaking={drop.isShaking}
         />
+      ))}
+
+      {/* Score flashes */}
+      {scoreFlashes.map(flash => (
+        <div
+          key={flash.id}
+          className="floatUp"
+          style={{
+            position: 'absolute',
+            left: `${flash.x}px`,
+            top: `${flash.y}px`,
+            color: '#1565c0',
+            fontWeight: '700',
+            fontSize: '20px',
+            pointerEvents: 'none',
+            animation: 'floatUp 0.8s ease-out forwards',
+            zIndex: 20,
+          }}
+        >
+          +20
+        </div>
       ))}
 
       {/* Ocean */}
@@ -91,7 +136,7 @@ function App() {
         </div>
       </div>
 
-      {/* Answer input - only shows during gameplay */}
+      {/* Answer input */}
       {gameRunning && (
         <div style={{
           position: 'absolute', top: '60px', left: '50%',
@@ -103,13 +148,12 @@ function App() {
             type="number"
             value={input}
             onChange={e => {
-            const value = e.target.value
-            setInput(value)
-            // Auto-submit as soon as answer matches — no Enter needed
-            handleAnswer(value)
+              setInput(e.target.value)
+              handleAnswer(e.target.value)
             }}
             placeholder="Type answer..."
             autoFocus
+            className={inputAnim}
             style={{
               padding: '8px 20px', borderRadius: '20px',
               border: '2px solid rgba(255,255,255,0.8)',
@@ -120,7 +164,7 @@ function App() {
           />
           <div style={{
             fontSize: '13px', fontWeight: '600', height: '18px',
-            color: feedback.includes('✅') ? '#2e7d32' : '#c62828',
+            color: '#c62828',
           }}>
             {feedback}
           </div>
@@ -136,20 +180,15 @@ function App() {
           alignItems: 'center', justifyContent: 'center', gap: '16px',
         }}>
           <div style={{ fontSize: '48px' }}>🌧</div>
-          <h1 style={{ fontSize: '36px', color: '#1565c0', margin: 0 }}>
-            Math Rain
-          </h1>
+          <h1 style={{ fontSize: '36px', color: '#1565c0', margin: 0 }}>Math Rain</h1>
           <p style={{ color: '#555', fontSize: '16px', margin: 0 }}>
             Solve math problems before the drops hit the ocean!
           </p>
-          <button
-            onClick={startGame}
-            style={{
-              padding: '12px 40px', borderRadius: '24px', border: 'none',
-              background: '#1976d2', color: '#fff',
-              fontSize: '18px', fontWeight: '600', cursor: 'pointer',
-            }}
-          >
+          <button onClick={startGame} style={{
+            padding: '12px 40px', borderRadius: '24px', border: 'none',
+            background: '#1976d2', color: '#fff',
+            fontSize: '18px', fontWeight: '600', cursor: 'pointer',
+          }}>
             Start Game
           </button>
         </div>
@@ -164,20 +203,15 @@ function App() {
           alignItems: 'center', justifyContent: 'center', gap: '16px',
         }}>
           <div style={{ fontSize: '48px' }}>💧</div>
-          <h2 style={{ fontSize: '32px', color: '#1565c0', margin: 0 }}>
-            Game Over!
-          </h2>
+          <h2 style={{ fontSize: '32px', color: '#1565c0', margin: 0 }}>Game Over!</h2>
           <p style={{ fontSize: '20px', color: '#333', margin: 0 }}>
             Final Score: <strong>{score}</strong>
           </p>
-          <button
-            onClick={startGame}
-            style={{
-              padding: '12px 40px', borderRadius: '24px', border: 'none',
-              background: '#1976d2', color: '#fff',
-              fontSize: '18px', fontWeight: '600', cursor: 'pointer',
-            }}
-          >
+          <button onClick={startGame} style={{
+            padding: '12px 40px', borderRadius: '24px', border: 'none',
+            background: '#1976d2', color: '#fff',
+            fontSize: '18px', fontWeight: '600', cursor: 'pointer',
+          }}>
             Play Again
           </button>
         </div>
