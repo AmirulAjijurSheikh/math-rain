@@ -1,9 +1,10 @@
+import type { DropData, GameSettings } from '../types'
 import { useState, useEffect, useRef, useCallback } from 'react'
-import type { DropData } from '../types'
 import { generateQuestion, randomX } from '../utils/mathEngine'
 import { playSplash } from '../utils/sounds'
 
-export function useGameLoop() {
+
+export function useGameLoop(settings: GameSettings) {
   const [drops, setDrops] = useState<DropData[]>([])
   const [score, setScore] = useState(0)
   const [lives, setLives] = useState(3)
@@ -25,21 +26,23 @@ export function useGameLoop() {
 
   const spawnDrop = useCallback(() => {
     const screenWidth = window.innerWidth
-    const { question, answer } = generateQuestion()
+    const { question, answer } = generateQuestion(settings)
     const newDrop: DropData = {
       id: nextIdRef.current++,
       x: randomX(screenWidth),
       y: -100,
       question,
       answer,
-      speed: 0.03 + (scoreRef.current / 25000),
+      speed: settings.difficulty === 'easy'   ? 0.03 + (scoreRef.current / 25000)
+           : settings.difficulty === 'medium' ? 0.05 + (scoreRef.current / 20000)
+           : 0.07 + (scoreRef.current / 15000),
       isPopping: false,
       isShaking: false,
     }
     dropsRef.current = [...dropsRef.current, newDrop]
     setDrops([...dropsRef.current])
     setTargetedId(prev => prev ?? newDrop.id)
-  }, [])
+  }, [settings])
 
   const gameLoop = useCallback((timestamp: number) => {
     if (!lastTimeRef.current) lastTimeRef.current = timestamp

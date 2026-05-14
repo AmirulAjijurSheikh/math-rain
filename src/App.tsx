@@ -1,8 +1,12 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import Cloud from './components/Cloud'
 import Drop from './components/Drop'
+import StartScreen from './components/StartScreen'
+import GameOverScreen from './components/GameOverScreen'
 import { useGameLoop } from './hooks/useGameLoop'
 import { playCorrect, playWrong } from './utils/sounds'
+import type { GameSettings } from './types'
+import { DEFAULT_SETTINGS } from './types'
 
 const CLOUDS = [
   { id: 1, x: 5,  y: 60,  size: 'large'  as const },
@@ -13,24 +17,28 @@ const CLOUDS = [
 ]
 
 function App() {
+  const [settings, setSettings] = useState<GameSettings>(DEFAULT_SETTINGS)
+  const [showStart, setShowStart] = useState(true)
+
   const {
     drops, score, lives,
     gameRunning, gameOver, targetedId,
     startGame, handleCorrectAnswer, handleWrongAnswer,
-  } = useGameLoop()
+  } = useGameLoop(settings)
 
   const [input, setInput] = useState('')
   const [feedback, setFeedback] = useState('')
   const [scoreFlashes, setScoreFlashes] = useState<
-    { id: number; x: number; y: number; pts: number }[]
+    { id: number; x: number; y: number }[]
   >([])
   const [inputAnim, setInputAnim] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
   const flashIdRef = useRef(0)
 
-  function showScoreFlash(x: number, y: number, pts: number) {
+
+  function showScoreFlash(x: number, y: number) {
     const id = flashIdRef.current++
-    setScoreFlashes(prev => [...prev, { id, x, y, pts }])
+    setScoreFlashes(prev => [...prev, { id, x, y }])
     setTimeout(() => {
       setScoreFlashes(prev => prev.filter(f => f.id !== id))
     }, 800)
@@ -46,11 +54,10 @@ function App() {
       playCorrect()
       setInputAnim('flash-blue')
       setTimeout(() => setInputAnim(''), 300)
-      showScoreFlash(matchedDrop.x, matchedDrop.y, 10)
+      showScoreFlash(matchedDrop.x, matchedDrop.y)
       handleCorrectAnswer(matchedDrop.id)
       setInput('')
     } else {
-      // Only show wrong feedback if input length suggests a complete answer
       if (value.length >= 2) {
         playWrong()
         setInputAnim('flash-red')
@@ -62,6 +69,16 @@ function App() {
     }
   }
 
+  function handleStart(s: GameSettings) {
+    setSettings(s)
+    setShowStart(false)
+    setTimeout(() => startGame(), 100)
+  }
+
+  function handlePlayAgain() {
+    setShowStart(true)
+  }
+
   const hearts = Array.from({ length: 3 }, (_, i) => i < lives ? '❤️' : '🖤')
 
   return (
@@ -70,7 +87,6 @@ function App() {
       background: 'linear-gradient(180deg, #b8dff0 0%, #cceaf7 60%, #a8d4e8 100%)',
       overflow: 'hidden', fontFamily: 'sans-serif',
     }}>
-
       {/* Clouds */}
       {CLOUDS.map(cloud => (
         <Cloud key={cloud.id} x={cloud.x} y={cloud.y} size={cloud.size} />
@@ -93,7 +109,6 @@ function App() {
       {scoreFlashes.map(flash => (
         <div
           key={flash.id}
-          className="floatUp"
           style={{
             position: 'absolute',
             left: `${flash.x}px`,
@@ -141,7 +156,8 @@ function App() {
         <div style={{
           position: 'absolute', top: '60px', left: '50%',
           transform: 'translateX(-50%)',
-          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px',
+          display: 'flex', flexDirection: 'column',
+          alignItems: 'center', gap: '6px',
         }}>
           <input
             ref={inputRef}
@@ -163,8 +179,8 @@ function App() {
             }}
           />
           <div style={{
-            fontSize: '13px', fontWeight: '600', height: '18px',
-            color: '#c62828',
+            fontSize: '13px', fontWeight: '600',
+            height: '18px', color: '#c62828',
           }}>
             {feedback}
           </div>
@@ -172,49 +188,13 @@ function App() {
       )}
 
       {/* Start screen */}
-      {!gameRunning && !gameOver && (
-        <div style={{
-          position: 'absolute', inset: 0,
-          background: 'rgba(255,255,255,0.88)',
-          display: 'flex', flexDirection: 'column',
-          alignItems: 'center', justifyContent: 'center', gap: '16px',
-        }}>
-          <div style={{ fontSize: '48px' }}>🌧</div>
-          <h1 style={{ fontSize: '36px', color: '#1565c0', margin: 0 }}>Math Rain</h1>
-          <p style={{ color: '#555', fontSize: '16px', margin: 0 }}>
-            Solve math problems before the drops hit the ocean!
-          </p>
-          <button onClick={startGame} style={{
-            padding: '12px 40px', borderRadius: '24px', border: 'none',
-            background: '#1976d2', color: '#fff',
-            fontSize: '18px', fontWeight: '600', cursor: 'pointer',
-          }}>
-            Start Game
-          </button>
-        </div>
+      {showStart && (
+        <StartScreen onStart={handleStart} />
       )}
 
       {/* Game over screen */}
       {gameOver && (
-        <div style={{
-          position: 'absolute', inset: 0,
-          background: 'rgba(255,255,255,0.88)',
-          display: 'flex', flexDirection: 'column',
-          alignItems: 'center', justifyContent: 'center', gap: '16px',
-        }}>
-          <div style={{ fontSize: '48px' }}>💧</div>
-          <h2 style={{ fontSize: '32px', color: '#1565c0', margin: 0 }}>Game Over!</h2>
-          <p style={{ fontSize: '20px', color: '#333', margin: 0 }}>
-            Final Score: <strong>{score}</strong>
-          </p>
-          <button onClick={startGame} style={{
-            padding: '12px 40px', borderRadius: '24px', border: 'none',
-            background: '#1976d2', color: '#fff',
-            fontSize: '18px', fontWeight: '600', cursor: 'pointer',
-          }}>
-            Play Again
-          </button>
-        </div>
+        <GameOverScreen score={score} onPlayAgain={handlePlayAgain} />
       )}
 
     </div>
