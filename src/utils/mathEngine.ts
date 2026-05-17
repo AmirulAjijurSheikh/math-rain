@@ -5,19 +5,25 @@ export interface Question {
   answer: number
 }
 
-export function generateQuestion(settings: GameSettings): Question {
-  // Build ops list based on player's toggles
+export function generateQuestion(settings: GameSettings, dropCount: number): Question {
+  // First 5 drops — always easy single digit addition only
+  if (dropCount <= 5) {
+    const a = Math.floor(Math.random() * 9) + 1
+    const b = Math.floor(Math.random() * 9) + 1
+    return { question: `${a} + ${b}`, answer: a + b }
+  }
+
+  // After drop 5 — use player's chosen operations and difficulty
   const ops: string[] = []
   if (settings.operations.addition)       ops.push('+')
   if (settings.operations.subtraction)    ops.push('-')
-  if (settings.operations.multiplication) ops.push('*')
+  if (settings.operations.multiplication) ops.push('×')
   if (settings.operations.division)       ops.push('/')
-  if (ops.length === 0) ops.push('+') // fallback
+  if (ops.length === 0) ops.push('+')
 
   const op = ops[Math.floor(Math.random() * ops.length)]
 
-  // Number ranges based on difficulty
-  const max = settings.difficulty === 'easy' ? 10
+  const max = settings.difficulty === 'easy'   ? 10
             : settings.difficulty === 'medium' ? 25
             : 50
 
@@ -31,8 +37,8 @@ export function generateQuestion(settings: GameSettings): Question {
     a = Math.floor(Math.random() * max) + 10
     b = Math.floor(Math.random() * a) + 1
     answer = a - b
-  } else if (op === '*') {
-    const mmax = settings.difficulty === 'easy' ? 5
+  } else if (op === '×') {
+    const mmax = settings.difficulty === 'easy'   ? 5
                : settings.difficulty === 'medium' ? 9 : 12
     a = Math.floor(Math.random() * mmax) + 2
     b = Math.floor(Math.random() * mmax) + 2

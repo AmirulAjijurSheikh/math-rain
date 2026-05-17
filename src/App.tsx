@@ -5,9 +5,11 @@ import StartScreen from './components/StartScreen'
 import GameOverScreen from './components/GameOverScreen'
 import LoginScreen from './components/LoginScreen'
 import SignupScreen from './components/SignupScreen'
+import Leaderboard from './components/Leaderboard'
 import { useGameLoop } from './hooks/useGameLoop'
+import { useScores } from './hooks/useScores'
 import { useAuth } from './context/AuthContext'
-import { playCorrect, playWrong } from './utils/sounds'
+import { playWrong } from './utils/sounds'
 import type { GameSettings } from './types'
 import { DEFAULT_SETTINGS } from './types'
 
@@ -21,9 +23,12 @@ const CLOUDS = [
 
 function App() {
   const { user, username, loading, signOut } = useAuth()
+  const { saveScore } = useScores()
   const [authScreen, setAuthScreen] = useState<'login' | 'signup'>('login')
   const [settings, setSettings] = useState<GameSettings>(DEFAULT_SETTINGS)
   const [showStart, setShowStart] = useState(true)
+  const [showLeaderboard, setShowLeaderboard] = useState(false)
+  const [isNewHighScore, setIsNewHighScore] = useState(false)
 
   const {
     drops, score, lives,
@@ -39,6 +44,21 @@ function App() {
   const [inputAnim, setInputAnim] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
   const flashIdRef = useRef(0)
+  const scoreSavedRef = useRef(false)
+
+  // Save score when game ends
+  const prevGameOver = useRef(false)
+  if (gameOver && !prevGameOver.current && !scoreSavedRef.current) {
+    prevGameOver.current = true
+    scoreSavedRef.current = true
+    if (user && username && score > 0) {
+      saveScore(user.id, username, score, settings.difficulty)
+        .then(() => setIsNewHighScore(true))
+    }
+  }
+  if (!gameOver) {
+    prevGameOver.current = false
+  }
 
   function showScoreFlash(x: number, y: number) {
     const id = flashIdRef.current++
@@ -53,7 +73,6 @@ function App() {
     if (isNaN(val)) return
     const matchedDrop = drops.find(d => d.answer === val)
     if (matchedDrop) {
-      playCorrect()
       setInputAnim('flash-blue')
       setTimeout(() => setInputAnim(''), 300)
       showScoreFlash(matchedDrop.x, matchedDrop.y)
@@ -74,22 +93,24 @@ function App() {
   function handleStart(s: GameSettings) {
     setSettings(s)
     setShowStart(false)
+    setIsNewHighScore(false)
+    scoreSavedRef.current = false
     setTimeout(() => startGame(), 100)
   }
 
   function handlePlayAgain() {
     setShowStart(true)
+    setIsNewHighScore(false)
+    scoreSavedRef.current = false
   }
 
   const hearts = Array.from({ length: 3 }, (_, i) => i < lives ? '❤️' : '🖤')
 
-  // Show loading spinner while checking auth
   if (loading) {
     return (
       <div style={{
         width: '100vw', height: '100vh',
-        display: 'flex', alignItems: 'center',
-        justifyContent: 'center',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
         background: 'linear-gradient(180deg, #b8dff0 0%, #cceaf7 60%, #a8d4e8 100%)',
         fontSize: '24px', fontFamily: 'sans-serif', color: '#1565c0',
       }}>
@@ -98,7 +119,6 @@ function App() {
     )
   }
 
-  // Show auth screens if not logged in
   if (!user) {
     if (authScreen === 'login') {
       return <LoginScreen onSwitchToSignup={() => setAuthScreen('signup')} />
@@ -106,7 +126,6 @@ function App() {
     return <SignupScreen onSwitchToLogin={() => setAuthScreen('login')} />
   }
 
-  // Main game
   return (
     <div style={{
       position: 'relative', width: '100vw', height: '100vh',
@@ -170,7 +189,6 @@ function App() {
           {hearts}
         </div>
 
-        {/* Username + logout */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <div style={{
             background: 'rgba(255,255,255,0.75)', borderRadius: '12px',
@@ -184,6 +202,16 @@ function App() {
           }}>
             SCORE: {score}
           </div>
+          <button
+            onClick={() => setShowLeaderboard(true)}
+            style={{
+              background: 'rgba(255,255,255,0.75)', borderRadius: '12px',
+              padding: '6px 14px', fontSize: '13px', fontWeight: '600',
+              color: '#1565c0', border: 'none', cursor: 'pointer',
+            }}
+          >
+            🏆
+          </button>
           <button
             onClick={signOut}
             style={{
@@ -237,7 +265,22 @@ function App() {
       {showStart && <StartScreen onStart={handleStart} />}
 
       {/* Game over screen */}
-      {gameOver && <GameOverScreen score={score} onPlayAgain={handlePlayAgain} />}
+      {gameOver && (
+        <GameOverScreen
+          score={score}
+          isNewHighScore={isNewHighScore}
+          onPlayAgain={handlePlayAgain}
+          onLeaderboard={() => setShowLeaderboard(true)}
+        />
+      )}
+
+      {/* Leaderboard */}
+      {showLeaderboard && (
+        <Leaderboard
+          currentUsername={username}
+          onClose={() => setShowLeaderboard(false)}
+        />
+      )}
 
     </div>
   )

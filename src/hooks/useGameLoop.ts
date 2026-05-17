@@ -19,6 +19,7 @@ export function useGameLoop(settings: GameSettings) {
   const animFrameRef = useRef<number | undefined>(undefined)
   const lastTimeRef = useRef<number>(0)
   const spawnTimerRef = useRef<number>(0)
+  const dropCountRef = useRef(0)
 
   useEffect(() => { dropsRef.current = drops }, [drops])
   useEffect(() => { livesRef.current = lives }, [lives])
@@ -26,7 +27,8 @@ export function useGameLoop(settings: GameSettings) {
 
   const spawnDrop = useCallback(() => {
     const screenWidth = window.innerWidth
-    const { question, answer } = generateQuestion(settings)
+    const { question, answer } = generateQuestion(settings, dropCountRef.current)
+    dropCountRef.current++
     const newDrop: DropData = {
       id: nextIdRef.current++,
       x: randomX(screenWidth),
@@ -113,6 +115,7 @@ export function useGameLoop(settings: GameSettings) {
   }, [spawnDrop])
 
   const startGame = useCallback(() => {
+    dropCountRef.current = 0
     dropsRef.current = []
     livesRef.current = 3
     scoreRef.current = 0
