@@ -46,8 +46,8 @@ function SignupScreen({ onSwitchToLogin }: Props) {
       <div style={{
         background: 'rgba(255,255,255,0.95)',
         borderRadius: '24px',
-        padding: '40px 48px',
-        width: '100%', maxWidth: '400px',
+        padding: '32px 24px',
+        width: '90%', maxWidth: '400px',
         display: 'flex', flexDirection: 'column',
         gap: '16px', fontFamily: 'sans-serif',
         boxShadow: '0 8px 32px rgba(0,0,0,0.1)',

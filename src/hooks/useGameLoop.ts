@@ -3,7 +3,6 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { generateQuestion, randomX } from '../utils/mathEngine'
 import { playSplash } from '../utils/sounds'
 
-
 export function useGameLoop(settings: GameSettings) {
   const [drops, setDrops] = useState<DropData[]>([])
   const [score, setScore] = useState(0)
@@ -32,7 +31,7 @@ export function useGameLoop(settings: GameSettings) {
     const newDrop: DropData = {
       id: nextIdRef.current++,
       x: randomX(screenWidth),
-      y: -100,
+      y: -(window.innerWidth < 600 ? 120 : 90),
       question,
       answer,
       speed: settings.difficulty === 'easy'   ? 0.03 + (scoreRef.current / 25000)
@@ -51,9 +50,14 @@ export function useGameLoop(settings: GameSettings) {
     const delta = timestamp - lastTimeRef.current
     lastTimeRef.current = timestamp
 
+    // Skip frame if delta too large — keyboard open, tab switch, resize
+    if (delta > 200) {
+      animFrameRef.current = requestAnimationFrame(gameLoop)
+      return
+    }
+
     const oceanY = window.innerHeight - 80
 
-    // Only move drops that are not popping
     const updatedDrops = dropsRef.current.map(drop => ({
       ...drop,
       y: drop.isPopping ? drop.y : drop.y + drop.speed * delta,
@@ -63,7 +67,6 @@ export function useGameLoop(settings: GameSettings) {
     let livesLost = 0
 
     updatedDrops.forEach(drop => {
-      // Popping drops never count as hitting ocean
       if (!drop.isPopping && drop.y + 90 >= oceanY) {
         livesLost++
         playSplash()
@@ -87,7 +90,6 @@ export function useGameLoop(settings: GameSettings) {
     dropsRef.current = survivingDrops
     setDrops([...survivingDrops])
 
-    // Target lowest non-popping drop
     const activeDrop = survivingDrops.filter(d => !d.isPopping)
     if (activeDrop.length > 0) {
       const lowest = activeDrop.reduce((a, b) => a.y > b.y ? a : b)
@@ -96,7 +98,6 @@ export function useGameLoop(settings: GameSettings) {
       setTargetedId(null)
     }
 
-    // Your spawn values — unchanged
     spawnTimerRef.current += delta
     const spawnInterval = scoreRef.current < 100
       ? Math.max(500, 1000 - scoreRef.current * 2)
@@ -139,7 +140,6 @@ export function useGameLoop(settings: GameSettings) {
     scoreRef.current = newScore
     setScore(newScore)
 
-    // Show pop animation then remove after 300ms
     setDrops(prev => prev.map(d =>
       d.id === dropId ? { ...d, isPopping: true } : d
     ))
@@ -164,10 +164,30 @@ export function useGameLoop(settings: GameSettings) {
     })
   }, [])
 
+  // Reset timer on visibility change AND resize (keyboard open on mobile)
+  useEffect(() => {
+    function handleReset() {
+      lastTimeRef.current = 0
+    }
+    document.addEventListener('visibilitychange', handleReset)
+    window.addEventListener('resize', handleReset)
+    return () => {
+      document.removeEventListener('visibilitychange', handleReset)
+      window.removeEventListener('resize', handleReset)
+    }
+  }, [])
+
   useEffect(() => {
     return () => {
       if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current)
     }
+  }, [])
+
+  const stopGame = useCallback(() => {
+    if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current)
+    dropsRef.current = []
+    setDrops([])
+    setGameRunning(false)
   }, [])
 
   return {
@@ -180,5 +200,6 @@ export function useGameLoop(settings: GameSettings) {
     startGame,
     handleCorrectAnswer,
     handleWrongAnswer,
+    stopGame
   }
 }

@@ -33,7 +33,7 @@ function App() {
   const {
     drops, score, lives,
     gameRunning, gameOver, targetedId,
-    startGame, handleCorrectAnswer, handleWrongAnswer,
+    startGame, stopGame, handleCorrectAnswer, handleWrongAnswer,
   } = useGameLoop(settings)
 
   const [input, setInput] = useState('')
@@ -99,9 +99,14 @@ function App() {
   }
 
   function handlePlayAgain() {
+    stopGame()
     setShowStart(true)
     setIsNewHighScore(false)
     scoreSavedRef.current = false
+    // Force page reload on mobile to clear all states cleanly
+    if (window.innerWidth < 600) {
+      window.location.reload()
+    }
   }
 
   const hearts = Array.from({ length: 3 }, (_, i) => i < lives ? '❤️' : '🖤')
@@ -180,7 +185,7 @@ function App() {
       <div style={{
         position: 'absolute', top: '12px', left: 0, right: 0,
         display: 'flex', justifyContent: 'space-between',
-        alignItems: 'center', padding: '0 20px',
+        alignItems: 'center', padding: '0 16px',
       }}>
         <div style={{
           background: 'rgba(255,255,255,0.75)', borderRadius: '20px',
@@ -189,46 +194,21 @@ function App() {
           {hearts}
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div style={{
-            background: 'rgba(255,255,255,0.75)', borderRadius: '12px',
-            padding: '6px 14px', fontSize: '14px', fontWeight: '600', color: '#1565c0',
-          }}>
-            👤 {username}
-          </div>
-          <div style={{
-            background: 'rgba(255,255,255,0.75)', borderRadius: '12px',
-            padding: '6px 18px', fontSize: '16px', fontWeight: '600', color: '#333',
-          }}>
-            SCORE: {score}
-          </div>
-          <button
-            onClick={() => setShowLeaderboard(true)}
-            style={{
-              background: 'rgba(255,255,255,0.75)', borderRadius: '12px',
-              padding: '6px 14px', fontSize: '13px', fontWeight: '600',
-              color: '#1565c0', border: 'none', cursor: 'pointer',
-            }}
-          >
-            🏆
-          </button>
-          <button
-            onClick={signOut}
-            style={{
-              background: 'rgba(255,255,255,0.75)', borderRadius: '12px',
-              padding: '6px 14px', fontSize: '13px', fontWeight: '600',
-              color: '#c62828', border: 'none', cursor: 'pointer',
-            }}
-          >
-            Logout
-          </button>
+        <div style={{
+          background: 'rgba(255,255,255,0.75)', borderRadius: '12px',
+          padding: '6px 18px', fontSize: '16px', fontWeight: '600', color: '#333',
+        }}>
+          SCORE: {score}
         </div>
+
+      
+
       </div>
 
       {/* Answer input */}
       {gameRunning && (
         <div style={{
-          position: 'absolute', top: '60px', left: '50%',
+          position: 'absolute', top: window.innerWidth < 600 ? '120px' : '60px', left: '50%',
           transform: 'translateX(-50%)',
           display: 'flex', flexDirection: 'column',
           alignItems: 'center', gap: '6px',
@@ -236,6 +216,8 @@ function App() {
           <input
             ref={inputRef}
             type="number"
+            inputMode="numeric"
+            pattern="[0-9]*"
             value={input}
             onChange={e => {
               setInput(e.target.value)
@@ -245,11 +227,13 @@ function App() {
             autoFocus
             className={inputAnim}
             style={{
-              padding: '8px 20px', borderRadius: '20px',
+              padding: '10px 20px', borderRadius: '20px',
               border: '2px solid rgba(255,255,255,0.8)',
               background: 'rgba(255,255,255,0.9)',
-              fontSize: '16px', textAlign: 'center',
-              outline: 'none', width: '180px',
+              fontSize: '18px', textAlign: 'center',
+              outline: 'none',
+              width: window.innerWidth < 600 ? '160px' : '180px',
+              WebkitAppearance: 'none',
             }}
           />
           <div style={{
@@ -262,10 +246,19 @@ function App() {
       )}
 
       {/* Start screen */}
-      {showStart && <StartScreen onStart={handleStart} />}
+      {showStart && (
+        <StartScreen
+          onStart={handleStart}
+          onLogout={() => {
+            stopGame()
+            signOut()
+          }}
+          username={username}
+        />
+      )}
 
       {/* Game over screen */}
-      {gameOver && (
+      {gameOver && !showStart && (
         <GameOverScreen
           score={score}
           isNewHighScore={isNewHighScore}

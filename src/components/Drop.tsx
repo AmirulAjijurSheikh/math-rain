@@ -8,6 +8,12 @@ interface DropProps {
 }
 
 function Drop({ x, y, question, isTargeted, isPopping, isShaking }: DropProps) {
+  // Bigger drops on mobile
+  const isMobile = window.innerWidth < 600
+  const w = isMobile ? 90 : 72
+  const h = isMobile ? 112 : 90
+  const fontSize = isMobile ? 13 : 11
+
   return (
     <div
       className={isPopping ? 'drop-pop' : isShaking ? 'drop-shake' : ''}
@@ -19,8 +25,8 @@ function Drop({ x, y, question, isTargeted, isPopping, isShaking }: DropProps) {
       }}
     >
       <svg
-        width="72"
-        height="90"
+        width={w}
+        height={h}
         viewBox="0 0 72 90"
         xmlns="http://www.w3.org/2000/svg"
       >
@@ -43,7 +49,7 @@ function Drop({ x, y, question, isTargeted, isPopping, isShaking }: DropProps) {
           x="36" y="62"
           textAnchor="middle"
           fill="white"
-          fontSize="11"
+          fontSize={fontSize}
           fontWeight="700"
           fontFamily="sans-serif"
         >
