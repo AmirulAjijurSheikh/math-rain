@@ -52,7 +52,7 @@ function Leaderboard({ currentUsername, onClose }: Props) {
       position: 'absolute', inset: 0,
       background: 'rgba(0,0,0,0.5)',
       display: 'flex', alignItems: 'center',
-      justifyContent: 'center', zIndex: 50,
+      justifyContent: 'center', zIndex: 100,
     }}>
       <div style={{
         background: '#fff', borderRadius: '24px',

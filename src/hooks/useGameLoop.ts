@@ -26,7 +26,7 @@ export function useGameLoop(settings: GameSettings) {
 
   const spawnDrop = useCallback(() => {
     const screenWidth = window.innerWidth
-    const { question, answer } = generateQuestion(settings, dropCountRef.current)
+    const { question, answer } = generateQuestion(settings, dropCountRef.current, scoreRef.current)
     dropCountRef.current++
     const newDrop: DropData = {
       id: nextIdRef.current++,
@@ -36,7 +36,7 @@ export function useGameLoop(settings: GameSettings) {
       answer,
       speed: settings.difficulty === 'easy'   ? 0.03 + (scoreRef.current / 25000)
            : settings.difficulty === 'medium' ? 0.05 + (scoreRef.current / 20000)
-           : 0.07 + (scoreRef.current / 15000),
+           : 0.08 + (scoreRef.current / 15000),
       isPopping: false,
       isShaking: false,
     }
@@ -50,7 +50,6 @@ export function useGameLoop(settings: GameSettings) {
     const delta = timestamp - lastTimeRef.current
     lastTimeRef.current = timestamp
 
-    // Skip frame if delta too large — keyboard open, tab switch, resize
     if (delta > 200) {
       animFrameRef.current = requestAnimationFrame(gameLoop)
       return
@@ -135,6 +134,13 @@ export function useGameLoop(settings: GameSettings) {
     animFrameRef.current = requestAnimationFrame(gameLoop)
   }, [gameLoop, spawnDrop])
 
+  const stopGame = useCallback(() => {
+    if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current)
+    dropsRef.current = []
+    setDrops([])
+    setGameRunning(false)
+  }, [])
+
   const handleCorrectAnswer = useCallback((dropId: number) => {
     const newScore = scoreRef.current + 20
     scoreRef.current = newScore
@@ -164,7 +170,6 @@ export function useGameLoop(settings: GameSettings) {
     })
   }, [])
 
-  // Reset timer on visibility change AND resize (keyboard open on mobile)
   useEffect(() => {
     function handleReset() {
       lastTimeRef.current = 0
@@ -183,13 +188,6 @@ export function useGameLoop(settings: GameSettings) {
     }
   }, [])
 
-  const stopGame = useCallback(() => {
-    if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current)
-    dropsRef.current = []
-    setDrops([])
-    setGameRunning(false)
-  }, [])
-
   return {
     drops,
     score,
@@ -198,8 +196,8 @@ export function useGameLoop(settings: GameSettings) {
     gameOver,
     targetedId,
     startGame,
+    stopGame,
     handleCorrectAnswer,
     handleWrongAnswer,
-    stopGame
   }
 }

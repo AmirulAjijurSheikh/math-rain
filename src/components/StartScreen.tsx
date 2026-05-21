@@ -4,10 +4,11 @@ import type { GameSettings } from '../types'
 interface Props {
   onStart: (settings: GameSettings) => void
   onLogout: () => void
+  onLeaderboard: () => void
   username: string | null
 }
 
-function StartScreen({ onStart, onLogout, username }: Props) {
+function StartScreen({ onStart, onLogout, onLeaderboard, username }: Props) {
   const [difficulty, setDifficulty] = useState<'easy' | 'medium' | 'hard'>('easy')
   const [ops, setOps] = useState({
     addition: true,
@@ -56,11 +57,13 @@ function StartScreen({ onStart, onLogout, username }: Props) {
   })
 
   return (
+
+    
     <div style={{
       position: 'absolute', inset: 0,
       background: 'rgba(255,255,255,0.92)',
       display: 'flex', flexDirection: 'column',
-      alignItems: 'center', justifyContent: 'center',
+      alignItems: 'center', justifyContent: 'flex-start',
       gap: '24px',
     }}>
       <div style={{
@@ -88,6 +91,26 @@ function StartScreen({ onStart, onLogout, username }: Props) {
           Solve math problems before the drops hit the ocean!
         </p>
 
+        
+        {/* Benefits */}
+        <div style={{
+          borderRadius: '16px',
+          padding: '14px 20px',
+          width: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '6px',
+        }}>
+        <p style={{ margin: 0, fontSize: '12px', fontWeight: '600', color: '#1565c0', fontFamily: 'sans-serif' }}>
+          🧠 What you improve
+        </p>
+        <p style={{ margin: 0, fontSize: '12px', color: '#555', fontFamily: 'sans-serif', lineHeight: '2' }}>
+          ⚡ Ability to think under time and pressure<br/>
+          🎯 Focus & composure in stress<br/>
+          🧩 Build longer attention span
+        </p>
+    </div>
+
         {/* Difficulty */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
           <p style={{ margin: 0, fontWeight: '600', color: '#444', fontFamily: 'sans-serif' }}>
@@ -97,19 +120,6 @@ function StartScreen({ onStart, onLogout, username }: Props) {
             <button style={diffBtnStyle('easy')}   onClick={() => setDifficulty('easy')}>Easy</button>
             <button style={diffBtnStyle('medium')} onClick={() => setDifficulty('medium')}>Medium</button>
             <button style={diffBtnStyle('hard')}   onClick={() => setDifficulty('hard')}>Hard</button>
-          </div>
-        </div>
-
-        {/* Operations */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
-          <p style={{ margin: 0, fontWeight: '600', color: '#444', fontFamily: 'sans-serif' }}>
-            Operations
-          </p>
-          <div style={{ display: 'flex', gap: '10px' }}>
-            <button style={opBtnStyle(ops.addition)}       onClick={() => toggleOp('addition')}>+</button>
-            <button style={opBtnStyle(ops.subtraction)}    onClick={() => toggleOp('subtraction')}>−</button>
-            <button style={opBtnStyle(ops.multiplication)} onClick={() => toggleOp('multiplication')}>×</button>
-            <button style={opBtnStyle(ops.division)}       onClick={() => toggleOp('division')}>÷</button>
           </div>
         </div>
 
@@ -127,6 +137,19 @@ function StartScreen({ onStart, onLogout, username }: Props) {
           Start Game 🎮
         </button>
 
+        {/* Leaderboard button */}
+        <button
+          onClick={onLeaderboard}
+          style={{
+            padding: '10px 28px', borderRadius: '20px',
+            border: '2px solid #1976d2',
+            background: 'transparent', color: '#1976d2',
+            fontSize: '14px', fontWeight: '600', cursor: 'pointer',
+          }}
+        >
+          🏆 Leaderboard
+        </button>
+
         {/* Logout button */}
         <button
           onClick={onLogout}
@@ -139,6 +162,8 @@ function StartScreen({ onStart, onLogout, username }: Props) {
         >
           Logout
         </button>
+
+        
 
       </div>
     </div>
