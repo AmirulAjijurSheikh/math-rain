@@ -32,145 +32,92 @@ function App() {
   const [isNewHighScore, setIsNewHighScore] = useState(false)
 
   const {
-    drops,
-    score,
-    lives,
-    gameRunning,
-    gameOver,
-    targetedId,
-    startGame,
-    stopGame,
-    handleCorrectAnswer,
-    handleWrongAnswer,
+    drops, score, lives,
+    gameRunning, gameOver, targetedId,
+    startGame, stopGame, handleCorrectAnswer, handleWrongAnswer,
   } = useGameLoop(settings)
 
   const [input, setInput] = useState('')
   const [feedback, setFeedback] = useState('')
-  const [scoreFlashes, setScoreFlashes] = useState<
+  const [scoreFlashes, setScoreFlashes] = useState <
     { id: number; x: number; y: number }[]
   >([])
-
   const [inputAnim, setInputAnim] = useState('')
 
   const inputRef = useRef<HTMLInputElement>(null)
   const flashIdRef = useRef(0)
   const scoreSavedRef = useRef(false)
-
-  // Save score when game ends
   const prevGameOver = useRef(false)
 
   if (gameOver && !prevGameOver.current && !scoreSavedRef.current) {
     prevGameOver.current = true
     scoreSavedRef.current = true
-
     if (user && username && score > 0) {
       saveScore(user.id, username, score, settings.difficulty)
         .then(() => setIsNewHighScore(true))
     }
   }
-
-  if (!gameOver) {
-    prevGameOver.current = false
-  }
+  if (!gameOver) prevGameOver.current = false
 
   function showScoreFlash(x: number, y: number) {
     const id = flashIdRef.current++
-
     setScoreFlashes(prev => [...prev, { id, x, y }])
-
     setTimeout(() => {
       setScoreFlashes(prev => prev.filter(f => f.id !== id))
     }, 800)
   }
 
   function handleAnswer(value: string) {
-  const val = parseInt(value.trim(), 10)
-
-  if (isNaN(val)) return
-
-  // Ignore already popping drops
-  const matchedDrop = drops.find(
-    d => d.answer === val && !d.isPopping
-  )
-
-  if (matchedDrop) {
-    // Immediately mark as popping to block double scoring
-    matchedDrop.isPopping = true
-
-    setInputAnim('flash-blue')
-
-    setTimeout(() => setInputAnim(''), 300)
-
-    showScoreFlash(matchedDrop.x, matchedDrop.y)
-
-    handleCorrectAnswer(matchedDrop.id)
-
-    setInput('')
-  } else {
-    if (value.length >= 2) {
-      playWrong()
-
-      setInputAnim('flash-red')
-
+    const val = parseInt(value.trim(), 10)
+    if (isNaN(val)) return
+    const matchedDrop = drops.find(d => d.answer === val && !d.isPopping)
+    if (matchedDrop) {
+      matchedDrop.isPopping = true
+      setInputAnim('flash-blue')
       setTimeout(() => setInputAnim(''), 300)
-
-      handleWrongAnswer()
-
-      setFeedback('❌ Wrong!')
-
-      setTimeout(() => setFeedback(''), 600)
+      showScoreFlash(matchedDrop.x, matchedDrop.y)
+      handleCorrectAnswer(matchedDrop.id)
+      setInput('')
+    } else {
+      if (value.length >= 2) {
+        playWrong()
+        setInputAnim('flash-red')
+        setTimeout(() => setInputAnim(''), 300)
+        handleWrongAnswer()
+        setFeedback('❌ Wrong!')
+        setTimeout(() => setFeedback(''), 600)
+      }
     }
   }
-}
 
   function handleStart(s: GameSettings) {
     setSettings(s)
-
     setShowStart(false)
-
     setIsNewHighScore(false)
-
     scoreSavedRef.current = false
-
     setTimeout(() => startGame(), 100)
   }
 
   function handlePlayAgain() {
     stopGame()
-
     setShowStart(true)
-
     setIsNewHighScore(false)
-
     scoreSavedRef.current = false
-
-    // Force page reload on mobile to clear all states cleanly
     if (window.innerWidth < 600) {
       window.location.reload()
     }
   }
 
-  const hearts = Array.from(
-    { length: 3 },
-    (_, i) => (i < lives ? '❤️' : '🖤')
-  )
+  const hearts = Array.from({ length: 3 }, (_, i) => i < lives ? '❤️' : '🖤')
 
   if (loading) {
     return (
-      <div
-        style={{
-          width: '100vw',
-          height: '100vh',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          background:
-            'linear-gradient(180deg, #b8dff0 0%, #cceaf7 60%, #a8d4e8 100%)',
-          fontSize: '24px',
-          fontFamily: 'sans-serif',
-          color: '#1565c0',
-        }}
-      >
+      <div style={{
+        width: '100vw', height: '100vh',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        background: 'linear-gradient(180deg, #b8dff0 0%, #cceaf7 60%, #a8d4e8 100%)',
+        fontSize: '24px', fontFamily: 'sans-serif', color: '#1565c0',
+      }}>
         Loading...
       </div>
     )
@@ -178,41 +125,21 @@ function App() {
 
   if (!user) {
     if (authScreen === 'login') {
-      return (
-        <LoginScreen
-          onSwitchToSignup={() => setAuthScreen('signup')}
-        />
-      )
+      return <LoginScreen onSwitchToSignup={() => setAuthScreen('signup')} />
     }
-
-    return (
-      <SignupScreen
-        onSwitchToLogin={() => setAuthScreen('login')}
-      />
-    )
+    return <SignupScreen onSwitchToLogin={() => setAuthScreen('login')} />
   }
 
   return (
     <>
-      <div
-        style={{
-          position: 'relative',
-          width: '100vw',
-          height: '100vh',
-          background:
-            'linear-gradient(180deg, #b8dff0 0%, #cceaf7 60%, #a8d4e8 100%)',
-          overflow: 'hidden',
-          fontFamily: 'sans-serif',
-        }}
-      >
+      <div style={{
+        position: 'relative', width: '100vw', height: '100vh',
+        background: 'linear-gradient(180deg, #b8dff0 0%, #cceaf7 60%, #a8d4e8 100%)',
+        overflow: 'hidden', fontFamily: 'sans-serif',
+      }}>
         {/* Clouds */}
         {CLOUDS.map(cloud => (
-          <Cloud
-            key={cloud.id}
-            x={cloud.x}
-            y={cloud.y}
-            size={cloud.size}
-          />
+          <Cloud key={cloud.id} x={cloud.x} y={cloud.y} size={cloud.size} />
         ))}
 
         {/* Falling drops */}
@@ -249,39 +176,40 @@ function App() {
         ))}
 
         {/* Ocean */}
-        <div
-          style={{
-            position: 'absolute',
-            bottom: 0,
-            left: 0,
-            right: 0,
-            height: '80px',
-            background:
-              'linear-gradient(180deg, #2196f3 0%, #1976d2 100%)',
-          }}
-        />
+        <div style={{
+          position: 'absolute', bottom: 0, left: 0, right: 0, height: '80px',
+          background: 'linear-gradient(180deg, #2196f3 0%, #1976d2 100%)',
+        }} />
 
         {/* HUD */}
         <div style={{
           position: 'absolute', top: '12px', left: 0, right: 0,
           display: 'flex', justifyContent: 'space-between',
-          alignItems: 'center', padding: '0 12px',
-          gap: '8px',
+          alignItems: 'center', padding: '0 8px',
+          gap: '4px',
         }}>
           {/* Hearts */}
           <div style={{
-            background: 'rgba(255,255,255,0.75)', borderRadius: '20px',
-            padding: '4px 10px', fontSize: window.innerWidth < 600 ? '16px' : '22px',
-            display: 'flex', gap: '2px', flexShrink: 0,
+            background: 'rgba(255,255,255,0.75)',
+            borderRadius: '20px',
+            padding: '4px 8px',
+            fontSize: '16px',
+            display: 'flex',
+            gap: '2px',
+            flexShrink: 0,
           }}>
             {hearts}
           </div>
 
           {/* Score */}
           <div style={{
-            background: 'rgba(255,255,255,0.75)', borderRadius: '12px',
-            padding: '4px 12px', fontSize: window.innerWidth < 600 ? '13px' : '16px',
-            fontWeight: '600', color: '#333', flexShrink: 0,
+            background: 'rgba(255,255,255,0.75)',
+            borderRadius: '12px',
+            padding: '4px 8px',
+            fontSize: '13px',
+            fontWeight: '600',
+            color: '#333',
+            flexShrink: 0,
           }}>
             SCORE: {score}
           </div>
@@ -290,9 +218,14 @@ function App() {
           <button
             onClick={() => { stopGame(); setShowStart(true) }}
             style={{
-              background: 'rgba(255,255,255,0.75)', borderRadius: '12px',
-              padding: '4px 10px', fontSize: window.innerWidth < 600 ? '14px' : '18px',
-              border: 'none', cursor: 'pointer', flexShrink: 0,
+              background: 'rgba(255,255,255,0.75)',
+              borderRadius: '12px',
+              padding: '4px 8px',
+              fontSize: '16px',
+              border: 'none',
+              cursor: 'pointer',
+              flexShrink: 0,
+              minWidth: '36px',
             }}
           >
             🏠
@@ -301,18 +234,16 @@ function App() {
 
         {/* Answer input */}
         {gameRunning && (
-          <div
-            style={{
-              position: 'absolute',
-              top: window.innerWidth < 600 ? '120px' : '60px',
-              left: '50%',
-              transform: 'translateX(-50%)',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: '6px',
-            }}
-          >
+          <div style={{
+            position: 'absolute',
+            top: '60px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '6px',
+          }}>
             <input
               ref={inputRef}
               type="number"
@@ -334,19 +265,16 @@ function App() {
                 fontSize: '18px',
                 textAlign: 'center',
                 outline: 'none',
-                width: window.innerWidth < 600 ? '160px' : '180px',
+                width: '160px',
                 WebkitAppearance: 'none',
               }}
             />
-
-            <div
-              style={{
-                fontSize: '13px',
-                fontWeight: '600',
-                height: '18px',
-                color: '#c62828',
-              }}
-            >
+            <div style={{
+              fontSize: '13px',
+              fontWeight: '600',
+              height: '18px',
+              color: '#c62828',
+            }}>
               {feedback}
             </div>
           </div>
@@ -356,10 +284,7 @@ function App() {
         {showStart && (
           <StartScreen
             onStart={handleStart}
-            onLogout={() => {
-              stopGame()
-              signOut()
-            }}
+            onLogout={() => { stopGame(); signOut() }}
             onLeaderboard={() => setShowLeaderboard(true)}
             username={username}
           />
@@ -376,15 +301,9 @@ function App() {
         )}
       </div>
 
-      {/* Leaderboard — outside main div */}
+      {/* Leaderboard — outside main div so never blocked */}
       {showLeaderboard && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            zIndex: 999,
-          }}
-        >
+        <div style={{ position: 'fixed', inset: 0, zIndex: 999 }}>
           <Leaderboard
             currentUsername={username}
             onClose={() => setShowLeaderboard(false)}
