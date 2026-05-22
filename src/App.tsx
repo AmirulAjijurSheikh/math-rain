@@ -262,41 +262,27 @@ function App() {
         />
 
         {/* HUD */}
-        <div
-          style={{
-            position: 'absolute',
-            top: '12px',
-            left: 0,
-            right: 0,
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            padding: '0 16px',
-          }}
-        >
-          <div
-            style={{
-              background: 'rgba(255,255,255,0.75)',
-              borderRadius: '20px',
-              padding: '6px 16px',
-              fontSize: '22px',
-              display: 'flex',
-              gap: '4px',
-            }}
-          >
+        <div style={{
+          position: 'absolute', top: '12px', left: 0, right: 0,
+          display: 'flex', justifyContent: 'space-between',
+          alignItems: 'center', padding: '0 12px',
+          gap: '8px',
+        }}>
+          {/* Hearts */}
+          <div style={{
+            background: 'rgba(255,255,255,0.75)', borderRadius: '20px',
+            padding: '4px 10px', fontSize: window.innerWidth < 600 ? '16px' : '22px',
+            display: 'flex', gap: '2px', flexShrink: 0,
+          }}>
             {hearts}
           </div>
 
-          <div
-            style={{
-              background: 'rgba(255,255,255,0.75)',
-              borderRadius: '12px',
-              padding: '6px 18px',
-              fontSize: '16px',
-              fontWeight: '600',
-              color: '#333',
-            }}
-          >
+          {/* Score */}
+          <div style={{
+            background: 'rgba(255,255,255,0.75)', borderRadius: '12px',
+            padding: '4px 12px', fontSize: window.innerWidth < 600 ? '13px' : '16px',
+            fontWeight: '600', color: '#333', flexShrink: 0,
+          }}>
             SCORE: {score}
           </div>
 
@@ -305,8 +291,8 @@ function App() {
             onClick={() => { stopGame(); setShowStart(true) }}
             style={{
               background: 'rgba(255,255,255,0.75)', borderRadius: '12px',
-              padding: '6px 12px', fontSize: '18px',
-              border: 'none', cursor: 'pointer',
+              padding: '4px 10px', fontSize: window.innerWidth < 600 ? '14px' : '18px',
+              border: 'none', cursor: 'pointer', flexShrink: 0,
             }}
           >
             🏠
