@@ -299,6 +299,18 @@ function App() {
           >
             SCORE: {score}
           </div>
+
+          {/* Home button */}
+          <button
+            onClick={() => { stopGame(); setShowStart(true) }}
+            style={{
+              background: 'rgba(255,255,255,0.75)', borderRadius: '12px',
+              padding: '6px 12px', fontSize: '18px',
+              border: 'none', cursor: 'pointer',
+            }}
+          >
+            🏠
+          </button>
         </div>
 
         {/* Answer input */}
