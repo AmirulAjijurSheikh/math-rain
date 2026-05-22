@@ -10,23 +10,19 @@ interface Props {
 
 function StartScreen({ onStart, onLogout, onLeaderboard, username }: Props) {
   const [difficulty, setDifficulty] = useState<'easy' | 'medium' | 'hard'>('easy')
-  const [ops, setOps] = useState({
-    addition: true,
-    subtraction: true,
-    multiplication: true,
-    division: true,
-  })
 
-  function toggleOp(op: keyof typeof ops) {
-    const active = Object.values(ops).filter(Boolean).length
-    if (ops[op] && active === 1) return
-    setOps(prev => ({ ...prev, [op]: !prev[op] }))
-  }
+
+
 
   function handleStart() {
     onStart({
       difficulty,
-      operations: ops,
+      operations: {
+        addition: true,
+        subtraction: true,
+        multiplication: true,
+        division: true,
+      }
     })
   }
 
@@ -43,18 +39,7 @@ function StartScreen({ onStart, onLogout, onLeaderboard, username }: Props) {
     transition: 'all 0.2s',
   })
 
-  const opBtnStyle = (active: boolean) => ({
-    padding: '8px 20px',
-    borderRadius: '16px',
-    border: '2px solid',
-    borderColor: active ? '#1565c0' : '#ccc',
-    background: active ? 'rgba(21,101,192,0.1)' : '#fff',
-    color: active ? '#1565c0' : '#999',
-    fontSize: '18px',
-    fontWeight: '700' as const,
-    cursor: 'pointer',
-    transition: 'all 0.2s',
-  })
+
 
   return (
 
