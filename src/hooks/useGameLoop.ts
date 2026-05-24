@@ -36,7 +36,7 @@ export function useGameLoop(settings: GameSettings) {
       answer,
       speed: settings.difficulty === 'easy'   ? 0.03 + (scoreRef.current / 25000)
            : settings.difficulty === 'medium' ? 0.05 + (scoreRef.current / 20000)
-           : 0.08 + (scoreRef.current / 15000),
+           : 0.12 + (scoreRef.current / 10000),
       isPopping: false,
       isShaking: false,
     }
@@ -98,12 +98,16 @@ export function useGameLoop(settings: GameSettings) {
     }
 
     spawnTimerRef.current += delta
-    const spawnInterval = scoreRef.current < 100
-      ? Math.max(500, 1000 - scoreRef.current * 2)
-      : Math.max(2000, 2000 - scoreRef.current * 1)
+    const spawnInterval = settings.difficulty === 'hard'
+      ? Math.max(600, 1500 - scoreRef.current * 1.5)
+      : scoreRef.current < 100
+        ? Math.max(500, 1000 - scoreRef.current * 2)
+        : Math.max(2000, 2000 - scoreRef.current * 1)
 
     const maxDrops = scoreRef.current < 150
       ? 1
+      : settings.difficulty === 'hard'
+      ? Math.min(5, 3 + Math.floor((scoreRef.current - 150) / 200))
       : Math.min(4, 2 + Math.floor((scoreRef.current - 150) / 150))
 
     if (spawnTimerRef.current >= spawnInterval) {

@@ -43,14 +43,25 @@ function generateMediumQuestion(op: string): { a: number, b: number, answer: num
 function generateHardQuestion(op: string): { a: number, b: number, answer: number } {
   let a: number, b: number, answer: number
   if (op === '+') {
-    a = rand(1, 99); b = rand(1, 99); answer = a + b
+    // Bigger two digit numbers 50-99
+    a = rand(50, 99)
+    b = rand(50, 99)
+    answer = a + b
   } else if (op === '-') {
-    // Can be negative in hard
-    a = rand(1, 99); b = rand(1, 99); answer = a - b
+    // Bigger two digit, can be negative
+    a = rand(50, 99)
+    b = rand(50, 99)
+    answer = a - b
   } else if (op === '×') {
-    a = rand(2, 12); b = rand(2, 12); answer = a * b
+    // Harder multiplication 7-12
+    a = rand(7, 12)
+    b = rand(7, 12)
+    answer = a * b
   } else {
-    answer = rand(2, 12); b = rand(2, 12); a = answer * b
+    // Harder division
+    answer = rand(7, 12)
+    b = rand(7, 12)
+    a = answer * b
   }
   return { a, b, answer }
 }
