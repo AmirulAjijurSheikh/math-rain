@@ -9,7 +9,6 @@ import Leaderboard from './components/Leaderboard'
 import { useGameLoop } from './hooks/useGameLoop'
 import { useScores } from './hooks/useScores'
 import { useAuth } from './context/AuthContext'
-import { playWrong } from './utils/sounds'
 import type { GameSettings } from './types'
 import { DEFAULT_SETTINGS } from './types'
 
@@ -33,8 +32,9 @@ function App() {
 
   const {
     drops, score, lives,
-    gameRunning, gameOver, targetedId,
-    startGame, stopGame, handleCorrectAnswer, handleWrongAnswer,
+    gameRunning, gameOver, isPaused, targetedId,
+    startGame, stopGame, pauseGame, resumeGame,
+    handleCorrectAnswer, handleWrongAnswer,
   } = useGameLoop(settings)
 
   const [input, setInput] = useState('')
@@ -54,7 +54,7 @@ function App() {
     scoreSavedRef.current = true
     if (user && username && score > 0) {
       saveScore(user.id, username, score, settings.difficulty)
-        .then(() => setIsNewHighScore(true))
+        .then((isNewBest) => setIsNewHighScore(isNewBest))
     }
   }
   if (!gameOver) prevGameOver.current = false
@@ -80,7 +80,6 @@ function App() {
       setInput('')
     } else {
       if (value.length >= 2) {
-        playWrong()
         setInputAnim('flash-red')
         setTimeout(() => setInputAnim(''), 300)
         handleWrongAnswer()
@@ -181,59 +180,104 @@ function App() {
           background: 'linear-gradient(180deg, #2196f3 0%, #1976d2 100%)',
         }} />
 
-        {/* HUD */}
-        <div style={{
-          position: 'absolute', top: '12px', left: 0, right: 0,
-          display: 'flex', justifyContent: 'space-between',
-          alignItems: 'center', padding: '0 8px',
-          gap: '4px',
-        }}>
-          {/* Hearts */}
+        {/* HUD — only show during gameplay */}
+        {!showStart && !gameOver && (
           <div style={{
-            background: 'rgba(255,255,255,0.75)',
-            borderRadius: '20px',
-            padding: '4px 8px',
-            fontSize: '16px',
-            display: 'flex',
-            gap: '2px',
-            flexShrink: 0,
+            position: 'absolute', top: '12px', left: 0, right: 0,
+            display: 'flex', justifyContent: 'space-between',
+            alignItems: 'center', padding: '0 8px',
+            gap: '4px',
           }}>
-            {hearts}
-          </div>
+            {/* Hearts */}
+            <div style={{
+              background: 'rgba(255,255,255,0.75)',
+              borderRadius: '20px',
+              padding: '4px 8px',
+              fontSize: '16px',
+              display: 'flex',
+              gap: '2px',
+              flexShrink: 0,
+            }}>
+              {hearts}
+            </div>
 
-          {/* Score */}
-          <div style={{
-            background: 'rgba(255,255,255,0.75)',
-            borderRadius: '12px',
-            padding: '4px 8px',
-            fontSize: '13px',
-            fontWeight: '600',
-            color: '#333',
-            flexShrink: 0,
-          }}>
-            SCORE: {score}
-          </div>
-
-          {/* Home button */}
-          <button
-            onClick={() => { stopGame(); setShowStart(true) }}
-            style={{
+            {/* Score */}
+            <div style={{
               background: 'rgba(255,255,255,0.75)',
               borderRadius: '12px',
               padding: '4px 8px',
-              fontSize: '16px',
-              border: 'none',
-              cursor: 'pointer',
+              fontSize: '13px',
+              fontWeight: '600',
+              color: '#333',
               flexShrink: 0,
-              minWidth: '36px',
-            }}
-          >
-            🏠
-          </button>
-        </div>
+            }}>
+              SCORE: {score}
+            </div>
+
+            {/* Pause button */}
+            <button
+              onClick={() => isPaused ? resumeGame() : pauseGame()}
+              style={{
+                background: 'rgba(255,255,255,0.75)',
+                borderRadius: '12px',
+                padding: '4px 8px',
+                fontSize: '16px',
+                border: 'none',
+                cursor: 'pointer',
+                flexShrink: 0,
+                minWidth: '36px',
+              }}
+            >
+              {isPaused ? '▶️' : '⏸️'}
+            </button>
+
+            {/* Home button */}
+            <button
+              onClick={() => { stopGame(); setShowStart(true) }}
+              style={{
+                background: 'rgba(255,255,255,0.75)',
+                borderRadius: '12px',
+                padding: '4px 8px',
+                fontSize: '16px',
+                border: 'none',
+                cursor: 'pointer',
+                flexShrink: 0,
+                minWidth: '36px',
+              }}
+            >
+              🏠
+            </button>
+          </div>
+        )}
+
+        {/* Pause overlay */}
+        {isPaused && gameRunning && (
+          <div style={{
+            position: 'absolute', inset: 0,
+            background: 'rgba(255,255,255,0.85)',
+            display: 'flex', flexDirection: 'column',
+            alignItems: 'center', justifyContent: 'center',
+            gap: '16px', zIndex: 40,
+          }}>
+            <div style={{ fontSize: '48px' }}>⏸️</div>
+            <h2 style={{ fontSize: '28px', color: '#1565c0', margin: 0, fontFamily: 'sans-serif' }}>
+              Game Paused
+            </h2>
+            <button
+              onClick={resumeGame}
+              style={{
+                padding: '12px 40px', borderRadius: '24px', border: 'none',
+                background: '#1976d2', color: '#fff',
+                fontSize: '18px', fontWeight: '600', cursor: 'pointer',
+              }}
+            >
+              ▶️ Resume
+            </button>
+          </div>
+        )}
 
         {/* Answer input */}
-        {gameRunning && (
+        {gameRunning && !isPaused && (
           <div style={{
             position: 'absolute',
             top: '60px',

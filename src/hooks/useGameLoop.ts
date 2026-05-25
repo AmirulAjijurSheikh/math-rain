@@ -192,15 +192,34 @@ export function useGameLoop(settings: GameSettings) {
     }
   }, [])
 
+  const [isPaused, setIsPaused] = useState(false)
+  const isPausedRef = useRef(false)
+
+  const pauseGame = useCallback(() => {
+    isPausedRef.current = true
+    setIsPaused(true)
+    if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current)
+  }, [])
+
+  const resumeGame = useCallback(() => {
+    isPausedRef.current = false
+    lastTimeRef.current = 0
+    setIsPaused(false)
+    animFrameRef.current = requestAnimationFrame(gameLoop)
+  }, [gameLoop])
+
   return {
     drops,
     score,
     lives,
     gameRunning,
     gameOver,
+    isPaused,
     targetedId,
     startGame,
     stopGame,
+    pauseGame,
+    resumeGame,
     handleCorrectAnswer,
     handleWrongAnswer,
   }

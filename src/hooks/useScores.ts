@@ -9,11 +9,10 @@ export function useScores() {
     username: string,
     score: number,
     difficulty: string
-  ): Promise<void> {
+  ): Promise<boolean> {
     setSaving(true)
+    let isNewBest = false
     try {
-      // Upsert — updates if score exists, inserts if not
-      // Only saves if it's better than existing score
       const { data: existing } = await supabase
         .from('scores')
         .select('score')
@@ -30,11 +29,13 @@ export function useScores() {
         }, {
           onConflict: 'user_id,difficulty'
         })
+        isNewBest = true
       }
     } catch (err) {
       console.error('Error saving score:', err)
     }
     setSaving(false)
+    return isNewBest
   }
 
   return { saveScore, saving }
